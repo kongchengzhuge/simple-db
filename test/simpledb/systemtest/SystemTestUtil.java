@@ -110,7 +110,7 @@ public class SystemTestUtil {
     public static void matchTuples(OpIterator iterator, List<ArrayList<Integer>> tuples)
             throws DbException, TransactionAbortedException, IOException {
         ArrayList<ArrayList<Integer>> copy = new ArrayList<ArrayList<Integer>>(tuples);
-
+        
         if (Debug.isEnabled()) {
             Debug.log("Expected tuples:");
             for (ArrayList<Integer> t : copy) {
@@ -121,7 +121,9 @@ public class SystemTestUtil {
         iterator.open();
         while (iterator.hasNext()) {
             Tuple t = iterator.next();
+            //System.out.println("tuple string is:"+t.toString());
             ArrayList<Integer> list = tupleToList(t);
+            //System.out.println("list string is:"+list.toString());
             boolean isExpected = copy.remove(list);
             Debug.log("scanned tuple: %s (%s)", t, isExpected ? "expected" : "not expected");
             if (!isExpected) {

@@ -20,13 +20,23 @@ public class Join extends Operator {
      * @param child2
      *            Iterator for the right(inner) relation to join
      */
+    
+    private JoinPredicate p;
+    private OpIterator child1;
+    private OpIterator child2;
+    private Tuple tp1;
+    
     public Join(JoinPredicate p, OpIterator child1, OpIterator child2) {
         // some code goes here
+    	this.p=p;
+    	this.child1=child1;
+    	this.child2=child2;
+    	tp1=null;
     }
 
     public JoinPredicate getJoinPredicate() {
         // some code goes here
-        return null;
+        return p;
     }
 
     /**
@@ -36,7 +46,7 @@ public class Join extends Operator {
      * */
     public String getJoinField1Name() {
         // some code goes here
-        return null;
+        return child1.getTupleDesc().getFieldName(p.getField1());
     }
 
     /**
@@ -46,7 +56,7 @@ public class Join extends Operator {
      * */
     public String getJoinField2Name() {
         // some code goes here
-        return null;
+        return child1.getTupleDesc().getFieldName(p.getField1());
     }
 
     /**
@@ -55,20 +65,30 @@ public class Join extends Operator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return TupleDesc.merge(child1.getTupleDesc(), child2.getTupleDesc());
     }
 
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+    	child1.open();
+    	child2.open();
+    	super.open();
+    	tp1=null;
     }
 
     public void close() {
         // some code goes here
+    	super.close();
+    	child2.close();
+    	child1.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+    	child1.rewind();
+    	child2.rewind();
+    	tp1=null;
     }
 
     /**
@@ -91,18 +111,44 @@ public class Join extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
+    	
+    	while(tp1!=null||child1.hasNext()) {
+    		if(tp1==null&&child1.hasNext())
+    			tp1=child1.next();
+    		while(child2.hasNext()) {
+	    		Tuple tp2=child2.next();
+	    		if(p.filter(tp1, tp2)) {
+	    			Tuple res=new Tuple(TupleDesc.merge(tp1.getTupleDesc(), tp2.getTupleDesc()));
+	    			int i=0;
+	    			Iterator<Field> iter=tp1.fields();
+	    			while(iter.hasNext()) {
+	    				res.setField(i++, iter.next());
+	    			}
+	    			iter=tp2.fields();
+	    			while(iter.hasNext()) {
+	    				res.setField(i++, iter.next());
+	    			}
+	    			//System.out.println(res.toString());
+	    			return res;
+	    		}
+    		}
+    		tp1=null;
+    		child2.rewind();
+    	}
         return null;
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+        return new OpIterator[] {child1,child2};
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+    	child1=children[0];
+    	child2=children[1];
     }
 
 }

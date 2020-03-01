@@ -8,6 +8,8 @@ import java.util.*;
  */
 public class TupleDesc implements Serializable {
 
+	
+	private ArrayList<TDItem> fields;	//add fields
     /**
      * A help class to facilitate organizing the information of each field
      * */
@@ -42,7 +44,7 @@ public class TupleDesc implements Serializable {
      * */
     public Iterator<TDItem> iterator() {
         // some code goes here
-        return null;
+        return fields.iterator();
     }
 
     private static final long serialVersionUID = 1L;
@@ -60,6 +62,11 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
+    	fields=new ArrayList<TDItem>();
+    	//System.out.println("create"+typeAr.length);
+    	for(int i=0;i<typeAr.length;++i) {
+    		fields.add(new TDItem(typeAr[i],fieldAr[i]));
+    	}
     }
 
     /**
@@ -72,6 +79,10 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr) {
         // some code goes here
+    	fields=new ArrayList<TDItem>();
+    	for(int i=0;i<typeAr.length;++i) {
+    		fields.add(new TDItem(typeAr[i],"unnamed"));
+    	}
     }
 
     /**
@@ -79,7 +90,7 @@ public class TupleDesc implements Serializable {
      */
     public int numFields() {
         // some code goes here
-        return 0;
+        return fields.size();
     }
 
     /**
@@ -93,7 +104,9 @@ public class TupleDesc implements Serializable {
      */
     public String getFieldName(int i) throws NoSuchElementException {
         // some code goes here
-        return null;
+    	if(i<0||i>fields.size())
+    		throw new NoSuchElementException();
+        return fields.get(i).fieldName;
     }
 
     /**
@@ -108,7 +121,9 @@ public class TupleDesc implements Serializable {
      */
     public Type getFieldType(int i) throws NoSuchElementException {
         // some code goes here
-        return null;
+    	if(i<0||i>=fields.size())
+    		throw new NoSuchElementException();
+        return fields.get(i).fieldType;
     }
 
     /**
@@ -122,7 +137,12 @@ public class TupleDesc implements Serializable {
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+    	for(int i=0;i<fields.size();++i) {
+    		if(fields.get(i).fieldName.equals(name)) {
+    			return i;
+    		}
+    	}
+    	throw new NoSuchElementException();
     }
 
     /**
@@ -130,8 +150,13 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      */
     public int getSize() {
+    	//System.out.println("this is"+fields.size());
+    	int res=0;
+    	for(int i=0;i<fields.size();++i) {
+    		res+=fields.get(i).fieldType.getLen();
+    	}
         // some code goes here
-        return 0;
+        return res;
     }
 
     /**
@@ -146,7 +171,19 @@ public class TupleDesc implements Serializable {
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
-        return null;
+    	Type ty[] = new Type[td1.numFields()+td2.numFields()];
+    	String name[] = new String[td1.numFields()+td2.numFields()];
+    	
+    	int i=0;
+    	for(;i<td1.numFields();++i) {
+    		ty[i]=td1.getFieldType(i);
+    		name[i]=td1.getFieldName(i);
+    	}
+    	for(int j=0;j<td2.numFields();++i,++j) {
+    		ty[i]=td2.getFieldType(j);
+    		name[i]=td2.getFieldName(j);
+    	}
+        return new TupleDesc(ty, name);
     }
 
     /**
@@ -162,6 +199,17 @@ public class TupleDesc implements Serializable {
 
     public boolean equals(Object o) {
         // some code goes here
+    	if(!this.getClass().isInstance(o))
+    		return false;
+    	TupleDesc tp=(TupleDesc) o;
+    	if(tp.numFields()==numFields()) {
+    		for(int i=0;i<tp.numFields();++i) {
+    			if(!tp.getFieldType(i).equals(this.getFieldType(i))) {
+    				return false;
+    			}
+    		}
+    		return true;
+    	}
         return false;
     }
 
@@ -180,6 +228,12 @@ public class TupleDesc implements Serializable {
      */
     public String toString() {
         // some code goes here
-        return "";
+    	String res="";
+    	for(int i=0;i<this.numFields()-1;++i) {
+    		res+=fields.get(i).toString();
+    		res+=",";
+    	}
+    	res+=fields.get(fields.size()-1).toString();
+        return res;
     }
 }

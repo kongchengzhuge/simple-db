@@ -111,7 +111,8 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic
             // nested-loops join.
-            return -1.0;
+        	double cost = cost1 + card1 * cost2 + card1 * card2;
+            return cost;
         }
     }
 
@@ -157,6 +158,18 @@ public class JoinOptimizer {
             Map<String, Integer> tableAliasToId) {
         int card = 1;
         // some code goes here
+        if(joinOp == Predicate.Op.EQUALS){
+            if(t1pkey){
+                card = card2;
+            }else if(t2pkey){
+                card = card1;
+            }else{
+                card = card1>card2 ?card1:card2;
+            }
+        }else{
+            double temp = 0.3 * card1 *card2;
+            card = (int)temp;
+        }
         return card <= 0 ? 1 : card;
     }
 
@@ -218,7 +231,29 @@ public class JoinOptimizer {
             HashMap<String, Double> filterSelectivities, boolean explain)
             throws ParsingException {
         //Not necessary for labs 1--3
-
+    	PlanCache pc=new PlanCache();
+    	Vector<LogicalJoinNode> orderjoins=null;
+    	for(int i=1;i<=joins.size();++i) {
+    		Set<Set<LogicalJoinNode>> set=enumerateSubsets(joins, i);
+    		for(Set<LogicalJoinNode> se:set) {
+    			double bestnow=Double.MAX_VALUE;
+        		for(LogicalJoinNode lg:se) {
+        			CostCard res=computeCostAndCardOfSubplan(stats, filterSelectivities, lg, se, bestnow, pc);
+        			if(res==null)
+        				continue;
+        			if(res.cost<bestnow) {
+        				bestnow=res.cost;
+        				pc.addPlan(se, res.cost, res.card, res.plan);
+        			}
+        		}
+        		if(i==joins.size()) {
+        			Vector<LogicalJoinNode> res=pc.getOrder(se);
+        			if(explain)
+        				printJoins(res, pc, stats, filterSelectivities);
+        			return res;
+        		}
+    		}
+    	}
         // some code goes here
         //Replace the following
         return joins;

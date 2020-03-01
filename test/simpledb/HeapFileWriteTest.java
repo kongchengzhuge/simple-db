@@ -37,8 +37,9 @@ public class HeapFileWriteTest extends TestUtil.CreateHeapFile {
             empty.insertTuple(tid, Utility.getHeapTuple(i, 2));
             assertEquals(2, empty.numPages());
         }
-
+        
         // and one more, just for fun...
+        System.out.println("the last");
         empty.insertTuple(tid, Utility.getHeapTuple(0, 2));
         assertEquals(3, empty.numPages());
     }

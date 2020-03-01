@@ -22,8 +22,30 @@ public class Catalog {
      * Constructor.
      * Creates a new, empty catalog.
      */
+	
+	public class Table {
+		private static final long serialVersionUID = 1L;
+		
+		public DbFile file;
+		public String name;
+		public String pkeyField;
+		
+		public Table(DbFile file, String name, String pkeyField) {
+			this.file=file;
+			this.name=name;
+			this.pkeyField=pkeyField;
+		}
+		
+	}
+	
+	
+	private ConcurrentHashMap<String , Integer> name2id;
+	private ConcurrentHashMap<Integer, Table> id2table;
+	
     public Catalog() {
         // some code goes here
+    	name2id=new ConcurrentHashMap<String , Integer>();
+    	id2table=new ConcurrentHashMap<Integer, Table>();
     }
 
     /**
@@ -37,6 +59,8 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+    	name2id.put(name,file.getId());
+    	id2table.put(file.getId(),new Table(file,name,pkeyField));
     }
 
     public void addTable(DbFile file, String name) {
@@ -60,7 +84,9 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+    	if(name==null||!name2id.containsKey(name))
+    		throw new NoSuchElementException();
+        return name2id.get(name);
     }
 
     /**
@@ -71,7 +97,9 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+    	if(!id2table.containsKey(tableid))
+    		throw new NoSuchElementException();
+        return id2table.get(tableid).file.getTupleDesc();
     }
 
     /**
@@ -82,26 +110,30 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+    	if(!id2table.containsKey(tableid))
+    		throw new NoSuchElementException();
+        return id2table.get(tableid).file;
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        return id2table.get(tableid).pkeyField;
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return id2table.keySet().iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        return id2table.get(id).name;
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
+    	id2table.clear();
+    	name2id.clear();
         // some code goes here
     }
     
@@ -117,6 +149,7 @@ public class Catalog {
             
             while ((line = br.readLine()) != null) {
                 //assume line is of the format name (field type, field type, ...)
+            	//System.out.println(line);
                 String name = line.substring(0, line.indexOf("(")).trim();
                 //System.out.println("TABLE NAME: " + name);
                 String fields = line.substring(line.indexOf("(") + 1, line.indexOf(")")).trim();
@@ -125,6 +158,7 @@ public class Catalog {
                 ArrayList<Type> types = new ArrayList<Type>();
                 String primaryKey = "";
                 for (String e : els) {
+                	//System.out.println(e);
                     String[] els2 = e.trim().split(" ");
                     names.add(els2[0].trim());
                     if (els2[1].trim().toLowerCase().equals("int"))
